@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    container_name: vehicle_tracker_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: vehicle-tracker
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  mqtt:
+    image: eclipse-mosquitto
+    container_name: vehicle_tracker_mqtt
+    ports:
+      - "1884:1884"
+      - "9002:9002"
+    volumes:
+      - ./config:/mosquitto/config:rw
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: vehicle_tracker_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  app:
+    build: .
+    container_name: vehicle_tracker_app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - mqtt
+      - rabbitmq
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: vehicle-tracker
+  
+  geofence-worker:
+   build:
+     context: .
+     dockerfile: Dockerfile.worker
+   container_name: vehicle_tracker_worker
+   depends_on:
+     rabbitmq:
+       condition: service_started
+   environment:
+     RABBITMQ_HOST: rabbitmq
+     RABBITMQ_PORT: 5672
+volumes:
+  pgdata:
