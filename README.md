@@ -69,4 +69,7 @@ vehicle-tracker/
 5. Geofence logic
    - Geofence is a circular zone with a 50-meter radius around:
      - Latitude: -6.1754
-     - Longitude: 
+     - Longitude: 106.8272
+   - If a location update falls inside this area, an alert is published to RabbitMQ exchange fleet.events, routed to geofence_alerts queue.
+
+## Thank You ##
